@@ -1,0 +1,71 @@
+services:
+  app:
+    build: .
+    container_name: bus-app
+    ports:
+      - "8501:8501"
+    command: ./start_app.sh
+    volumes:
+      - .:/app
+    depends_on:
+      - postgres
+      - vault-init
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - REPORT_EMAIL_TO=${REPORT_EMAIL_TO}
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: bus-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  vault:
+    image: hashicorp/vault:latest
+    container_name: bus-vault
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_TOKEN}
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    restart: unless-stopped
+
+  vault-init:
+    image: hashicorp/vault:latest
+    container_name: bus-vault-init
+    depends_on:
+      - vault
+    env_file:
+      - .env
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN}
+    volumes:
+      - ./vault-init.sh:/vault-init.sh
+    entrypoint: sh /vault-init.sh
+    restart: "no"
+
+volumes:
+  postgres_data:

@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]
+psycopg2-binary
+pydantic-settings
+python-dotenv
+polars
+pandas
+hvac
+httpx
+streamlit
+plotly
+reportlab
+prefect
+anthropic
+APScheduler
