@@ -58,6 +58,7 @@ services:
     container_name: bus-app
     ports:
       - "8501:8501"
+      - "8000:8000"
     command: ./start_app.sh
     volumes:
       - .:/app

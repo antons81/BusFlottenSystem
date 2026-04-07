@@ -1,6 +1,8 @@
 # Базовый образ Python (лёгкий и стабильный)
 FROM python:3.12-slim
 
+RUN groupadd -r pyuser && useradd -r -g pyuser -m -d /home/pyuser -s /sbin/nologin pyuser
+
 # Устанавливаем системные зависимости (нужны для psycopg2 и компиляции)
 RUN apt-get update && apt-get install -y \
     gcc \
@@ -14,13 +16,15 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Устанавливаем все Python-библиотеки
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --root-user-action=ignore -r requirements.txt
 
-# Копируем весь остальной код проекта
-COPY . .
+COPY --chown=pyuser:pyuser . .
+
+USER pyuser
 
 # Открываем порт FastAPI
 EXPOSE 8000
+EXPOSE 8501
 
 # Команда запуска по умолчанию (FastAPI в режиме разработки)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--reload"]
+CMD ["./start_app.sh"]
