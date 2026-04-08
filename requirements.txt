@@ -14,3 +14,4 @@ reportlab
 prefect
 anthropic
 APScheduler
+ollama

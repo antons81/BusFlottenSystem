@@ -224,7 +224,10 @@ def generate_pdf_report(report_type="weekly"):
     story.append(Spacer(1, 15))
     story.append(Paragraph("🤖 KI-Analyse & Empfehlungen", styles['SectionHeading']))
 
-    ai_text = generate_ai_summary(report_type)
+    #ai_text = generate_ai_summary(report_type)
+
+    ai_result = generate_ai_summary(report_type)
+    ai_text = ai_result.summary
 
     for paragraph in ai_text.split('\n\n'):
         if paragraph.strip():

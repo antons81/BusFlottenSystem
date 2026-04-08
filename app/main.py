@@ -1,3 +1,5 @@
+from app.models import AIAnalyseRequest, AIAnalyseResponse
+from ai_analysis import generate_ai_summary
 from fastapi import FastAPI
 from sqlalchemy import text
 from app.secure_db import get_db_engine, execute_safe_query
@@ -15,6 +17,13 @@ def read_root():
         "status": "ok",
         "endpoints": ["/kpi", "/health", "/vault-test", "/test-db"]
     }
+
+@app.post("/ai-analyse", response_model=AIAnalyseResponse)
+def ai_analyse(request: AIAnalyseRequest):
+    return generate_ai_summary(
+        report_type=request.report_type,
+        provider=request.provider
+    )
 
 @app.get("/health")
 def health():
