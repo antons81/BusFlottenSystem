@@ -152,6 +152,8 @@ st.markdown("""
         border-radius: 8px !important;
         font-weight: 500 !important;
         color: #64748b !important;
+        padding-left: 16px;
+        padding-right: 16px;
     }
     .stTabs [aria-selected="true"] {
         background: linear-gradient(135deg, #667eea, #764ba2) !important;
@@ -215,7 +217,7 @@ if not check_auth():
 # ====================== SIDEBAR ======================
 with st.sidebar:
     st.markdown("""
-    <div style="padding:0.5rem 0 1rem; text-align:center">
+    <div style="padding:0.5rem 0 1rem; text-align:left">
         <div style="font-size:2rem">🚌</div>
         <div style="font-size:1.1rem; font-weight:700; margin-top:0.3rem">go:on</div>
         <div style="font-size:0.72rem; opacity:0.55">Flottenmanagement</div>
@@ -335,7 +337,7 @@ LAYOUT = dict(
 )
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "🚌 Flotte & Fahrten",
+    "📝 PDF Berichte",
     "📡 IVU – Fahrten",
     "🎫 IVU – Ticketing",
     "📈 IVU – KPI Trends",
@@ -343,7 +345,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 ])
 
 
-# ─── TAB 1: Flotte & Fahrten ────────────────────────────────────────────────
+# ─── TAB 1: PDF Berichte ────────────────────────────────────────────────
 with tab1:
     st.markdown('<div class="section-title">📄 Berichte & Aktionen</div>',
                 unsafe_allow_html=True)
