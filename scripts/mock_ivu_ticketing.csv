@@ -1,0 +1,7 @@
+fahrt_id,zeit,tarif_typ,betrag_eur,zahlungsart,haltestelle
+1,2026-04-07 05:45:12,Einzelfahrschein,2.90,Bar,Hauptbahnhof
+1,2026-04-07 05:48:30,Tagesticket,7.50,eTicket,ZOB
+2,2026-04-07 05:25:10,Monatsabo,0.00,Handy,Universität
+3,2026-04-07 07:15:45,Sozialticket,0.00,Bar,Marktplatz
+4,2026-04-07 08:05:20,Einzelfahrschein,2.90,Karte,Hauptbahnhof
+5,2026-04-07 08:10:15,Tagesticket,7.50,Handy,Universität
