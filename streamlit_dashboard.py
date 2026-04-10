@@ -497,19 +497,8 @@ with tab5:
 
     if "ki_result" in st.session_state:
         result = st.session_state["ki_result"]
-
-        st.caption(f"🤖 {result.provider_used.upper()} · {result.model_used} · {result.zeichen:,} Zeichen")
-        st.markdown(f"""
-        <div style="background:white; border-radius:14px; padding:1.5rem 2rem;
-                    box-shadow:0 2px 12px rgba(0,0,0,0.07); margin-top:0.5rem;
-                    border-left: 4px solid #667eea;">
-            <div style="color:#1e293b; line-height:1.7; font-size:0.95rem">
-                {result.summary.replace(chr(10), '<br>')}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.caption(f"🤖 {result.provider_used} · {result.model_used}")
+        st.markdown(result.summary)
 
         try:
             pdf_bytes = generate_ki_pdf(result, report_type=report_type)
