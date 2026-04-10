@@ -8,7 +8,7 @@ import glob
 import time
 import pytz
 
-from generate_pdf_report import generate_pdf_report
+from generate_pdf_report import generate_pdf_report, generate_ki_pdf
 from auto_reports import create_weekly_report
 from ai_analysis import generate_ai_summary
 from app.models import AIAnalyseResponse
@@ -490,18 +490,38 @@ with tab5:
         with st.spinner(f"KI-Analyse läuft via {provider}…"):
             try:
                 result: AIAnalyseResponse = generate_ai_summary(report_type=report_type, provider=provider)
-                st.caption(f"🤖 {result.provider_used.upper()} · {result.model_used} · {result.zeichen:,} Zeichen")
-                st.markdown(f"""
-                <div style="background:white; border-radius:14px; padding:1.5rem 2rem;
-                            box-shadow:0 2px 12px rgba(0,0,0,0.07); margin-top:0.5rem;
-                            border-left: 4px solid #667eea;">
-                    <div style="color:#1e293b; line-height:1.7; font-size:0.95rem">
-                        {result.summary.replace(chr(10), '<br>')}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                st.session_state["ki_result"] = result
             except Exception as e:
                 st.error(f"Fehler: {str(e)}")
+                st.session_state.pop("ki_result", None)
+
+    if "ki_result" in st.session_state:
+        result = st.session_state["ki_result"]
+
+        st.caption(f"🤖 {result.provider_used.upper()} · {result.model_used} · {result.zeichen:,} Zeichen")
+        st.markdown(f"""
+        <div style="background:white; border-radius:14px; padding:1.5rem 2rem;
+                    box-shadow:0 2px 12px rgba(0,0,0,0.07); margin-top:0.5rem;
+                    border-left: 4px solid #667eea;">
+            <div style="color:#1e293b; line-height:1.7; font-size:0.95rem">
+                {result.summary.replace(chr(10), '<br>')}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        try:
+            pdf_bytes = generate_ki_pdf(result, report_type=report_type)
+            st.download_button(
+                label="📄 Als PDF speichern",
+                data=pdf_bytes,
+                file_name=f"ki_analyse_{report_type}_{datetime.now(tz=pytz.timezone('Europe/Berlin')).strftime('%d-%m-%Y')}.pdf",
+                mime="application/pdf",
+            )
+    
+        except Exception as e:
+            st.warning(f"PDF-Export nicht verfügbar: {e}")
 
 # ====================== FOOTER ======================
 st.markdown("<br>", unsafe_allow_html=True)

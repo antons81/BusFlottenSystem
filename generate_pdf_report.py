@@ -9,6 +9,7 @@ from reportlab.lib.units import cm
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from app.secure_db import execute_safe_query
 from datetime import datetime
+from io import BytesIO
 import os
 import pandas as pd
 import pytz
@@ -90,6 +91,7 @@ def kpi_card(value, label, styles, warn=False):
     return t
 
 
+# ====================== HAUPT-PDF ======================
 def generate_pdf_report(report_type="weekly"):
     timestamp = datetime.now(tz=berlin).strftime("%Y-%m-%d_%H-%M")
     filename  = f"reports/goon_{report_type}_Bericht_{timestamp}.pdf"
@@ -130,25 +132,25 @@ def generate_pdf_report(report_type="weekly"):
         FROM ivu_fahrten
     """)[0]
 
-    fahrten      = kpi['fahrten']      or 0
-    passagiere   = kpi['passagiere']   or 0
+    fahrten      = kpi['fahrten']          or 0
+    passagiere   = kpi['passagiere']       or 0
     auslastung   = kpi['avg_auslastung']   or 0
     verspaetung  = kpi['avg_verspaetung']  or 0
-    gesamt_km    = kpi['gesamt_km']    or 0
-    puenktlich   = kpi['puenktlichkeit'] or 0
+    gesamt_km    = kpi['gesamt_km']        or 0
+    puenktlich   = kpi['puenktlichkeit']   or 0
 
     kpi_row1 = Table([[
-        kpi_card(f"{fahrten:,}",     "Fahrten gesamt",  styles),
-        kpi_card(f"{passagiere:,}",  "Passagiere",      styles),
-        kpi_card(f"{auslastung}%",   "Ø Auslastung",    styles),
-        kpi_card(f"{verspaetung}",   "Ø Verspätung min",styles, warn=float(verspaetung) > 5),
+        kpi_card(f"{fahrten:,}",     "Fahrten gesamt",   styles),
+        kpi_card(f"{passagiere:,}",  "Passagiere",       styles),
+        kpi_card(f"{auslastung}%",   "Ø Auslastung",     styles),
+        kpi_card(f"{verspaetung}",   "Ø Verspätung min", styles, warn=float(verspaetung) > 5),
     ]], colWidths=[4.2*cm]*4)
     story.append(kpi_row1)
     story.append(Spacer(1, 0.3*cm))
 
     kpi_row2 = Table([[
-        kpi_card(f"{gesamt_km:,}",   "Gesamt-km",       styles),
-        kpi_card(f"{puenktlich}%",   "Pünktlichkeit",   styles, warn=float(puenktlich) < 80),
+        kpi_card(f"{gesamt_km:,}",   "Gesamt-km",    styles),
+        kpi_card(f"{puenktlich}%",   "Pünktlichkeit",styles, warn=float(puenktlich) < 80),
     ]], colWidths=[4.2*cm]*2)
     story.append(kpi_row2)
 
@@ -161,7 +163,6 @@ def generate_pdf_report(report_type="weekly"):
 
     for paragraph in ai_text.split('\n\n'):
         if paragraph.strip():
-            # убираем markdown символы для PDF
             clean = paragraph.strip().replace('**', '').replace('###', '').replace('##', '').replace('#', '')
             story.append(Paragraph(clean, styles['AIText']))
             story.append(Spacer(1, 8))
@@ -257,6 +258,57 @@ def generate_pdf_report(report_type="weekly"):
     doc.build(story, onFirstPage=header_footer, onLaterPages=header_footer)
     print(f"✅ PDF-Bericht erstellt: {filename}")
     return filename
+
+
+# ====================== KI-ANALYSE PDF (für Streamlit-Button) ======================
+def generate_ki_pdf(result, report_type="weekly") -> bytes:
+    """
+    Erzeugt einen KI-Analyse-PDF als Bytes (für st.download_button).
+    Verwendet dasselbe Corporate Design wie generate_pdf_report.
+    """
+    buf = BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        rightMargin=1.5*cm, leftMargin=1.5*cm,
+        topMargin=2.5*cm, bottomMargin=1.8*cm
+    )
+
+    styles = build_styles()
+    story  = []
+
+    # ── Titel ──────────────────────────────────────────────────────────────
+    period_label = "Wöchentliche" if report_type == "weekly" else "Monatliche"
+    story.append(Spacer(1, 0.5*cm))
+    story.append(Paragraph(f"{period_label} KI-Flottenanalyse", styles['ReportTitle']))
+    story.append(Paragraph(
+        f"Erstellt: {datetime.now(tz=berlin).strftime('%d.%m.%Y %H:%M')}  |  "
+        f"Modell: {result.provider_used.upper()} / {result.model_used}  |  "
+        f"{result.zeichen:,} Zeichen",
+        styles['ReportMeta']
+    ))
+    story.append(HRFlowable(width="100%", thickness=1, color=GREEN_MAIN, spaceAfter=12))
+
+    # ── KI-Text ────────────────────────────────────────────────────────────
+    story.append(Paragraph("KI-Analyse & Empfehlungen", styles['SectionHeading']))
+
+    for paragraph in result.summary.split('\n\n'):
+        if paragraph.strip():
+            clean = paragraph.strip().replace('**', '').replace('###', '').replace('##', '').replace('#', '')
+            story.append(Paragraph(clean, styles['AIText']))
+            story.append(Spacer(1, 8))
+
+    # ── Footer ─────────────────────────────────────────────────────────────
+    story.append(Spacer(1, 0.8*cm))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=GRAY_MID))
+    story.append(Spacer(1, 0.2*cm))
+    story.append(Paragraph(
+        "Dieser Bericht wurde automatisch generiert. Alle Angaben ohne Gewähr. "
+        "© go:on Gesellschaft für Bus- und Schienenverkehr mbH",
+        styles['FooterText']
+    ))
+
+    doc.build(story, onFirstPage=header_footer, onLaterPages=header_footer)
+    return buf.getvalue()
 
 
 if __name__ == "__main__":
